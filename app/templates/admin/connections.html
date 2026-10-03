@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}连接管理 - Socks5代理服务器{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">连接管理</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">返回仪表盘</a>
+        </div>
+    </div>
+</div>
+
+<!-- 活动连接 -->
+<div class="row">
+    <div class="col-md-12">
+        <h4>活动连接 ({{ active_connections|length }})</h4>
+        <div class="table-responsive">
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>客户端地址</th>
+                        <th>目标地址</th>
+                        <th>用户</th>
+                        <th>开始时间</th>
+                        <th>已发送</th>
+                        <th>已接收</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if active_connections %}
+                        {% for conn in active_connections %}
+                        <tr>
+                            <td>{{ conn.id }}</td>
+                            <td>{{ conn.client_addr }}:{{ conn.client_port }}</td>
+                            <td>{{ conn.target_addr }}:{{ conn.target_port }}</td>
+                            <td>{{ conn.user.username if conn.user else 'N/A' }}</td>
+                            <td>{{ conn.start_time|format_datetime }}</td>
+                            <td>{{ (conn.bytes_sent / 1024)|round(2) }} KB</td>
+                            <td>{{ (conn.bytes_received / 1024)|round(2) }} KB</td>
+                            <td>
+                                <!-- 将“关闭”链接改为 POST 表单，包含 CSRF Token -->
+                                <form method="post" action="{{ url_for('admin.close_connection', connection_id=conn.id) }}" style="display:inline;" onsubmit="return confirm('确定要关闭此连接吗？');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-danger">关闭</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">当前没有活动连接</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 最近关闭的连接 -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <h4>最近关闭的连接 ({{ recent_closed|length }})</h4>
+        <div class="table-responsive">
+            <table class="table table-striped table-sm">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>客户端地址</th>
+                        <th>目标地址</th>
+                        <th>用户</th>
+                        <th>状态</th>
+                        <th>开始时间</th>
+                        <th>结束时间</th>
+                        <th>持续时间</th>
+                        <th>已发送</th>
+                        <th>已接收</th>
+                        <th>错误</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if recent_closed %}
+                        {% for conn in recent_closed %}
+                        <tr>
+                            <td>{{ conn.id }}</td>
+                            <td>{{ conn.client_addr }}:{{ conn.client_port }}</td>
+                            <td>{{ conn.target_addr }}:{{ conn.target_port }}</td>
+                            <td>{{ conn.user.username if conn.user else 'N/A' }}</td>
+                            <td>
+                                {% if conn.status == 'CLOSED' %}
+                                <span class="badge bg-secondary">已关闭</span>
+                                {% elif conn.status == 'ERROR' %}
+                                <span class="badge bg-danger">错误</span>
+                                {% else %}
+                                <span class="badge bg-warning">{{ conn.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ conn.start_time|format_datetime }}</td>
+                            <td>{{ conn.end_time|format_datetime if conn.end_time else 'N/A' }}</td>
+                            <td>
+                                {% if conn.end_time %}
+                                    {% set duration = conn.duration %}
+                                    {{ duration|round(2) }} 秒
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ (conn.bytes_sent / 1024)|round(2) }} KB</td>
+                            <td>{{ (conn.bytes_received / 1024)|round(2) }} KB</td>
+                            <td>
+                                {% if conn.error_message %}
+                                    <span class="text-danger" title="{{ conn.error_message }}">{{ conn.error_message|truncate(30) }}</span>
+                                {% else %}
+                                    <span class="text-muted">无</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="11" class="text-center">没有最近关闭的连接记录</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

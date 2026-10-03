@@ -1,0 +1,93 @@
+    {% extends "base.html" %}
+
+    {% if action == 'add' %}
+      {% set page_title = '新增场景' %}
+      {% set submit_text = '创建' %}
+    {% else %}
+      {% set page_title = '编辑场景' %}
+      {% set submit_text = '保存' %}
+    {% endif %}
+
+    {% block title %}{{ page_title }} - 场景管理{% endblock %}
+
+    {% block content %}
+    <div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">{{ page_title }}</h1>
+        <a href="{{ url_for('admin.scenario_list') }}" class="btn btn-secondary">返回列表</a>
+    </div>
+
+    <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+            <label for="name" class="form-label">场景名称</label>
+            <input type="text" class="form-control" id="name" name="name"
+                   value="{{ scenario.name if scenario else '' }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">描述</label>
+            <input type="text" class="form-control" id="description" name="description"
+                   value="{{ scenario.description if scenario else '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="proxy_host" class="form-label">代理监听地址</label>
+            <input type="text" class="form-control" id="proxy_host" name="proxy_host"
+                   value="{{ scenario.proxy_host if scenario else '0.0.0.0' }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label for="port" class="form-label">代理监听端口</label>
+            <input type="number" class="form-control" id="port" name="port"
+                   value="{{ scenario.port if scenario else 1080 }}" required min="1" max="65535">
+        </div>
+
+        <div class="mb-3">
+            <label for="max_connections" class="form-label">最大连接数</label>
+            <input type="number" class="form-control" id="max_connections" name="max_connections"
+                   value="{{ scenario.max_connections if scenario else 100 }}" required min="1">
+        </div>
+
+        <div class="mb-3">
+            <label for="buffer_size" class="form-label">缓冲区大小（字节）</label>
+            <input type="number" class="form-control" id="buffer_size" name="buffer_size"
+                   value="{{ scenario.buffer_size if scenario else 4096 }}" required min="1024">
+        </div>
+
+        <div class="mb-3">
+            <label for="proxy_timeout" class="form-label">连接超时（秒）</label>
+            <input type="number" class="form-control" id="proxy_timeout" name="proxy_timeout"
+                   value="{{ scenario.proxy_timeout if scenario else 60 }}" required min="1">
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="enable_auth" name="enable_auth"
+                   {% if scenario and scenario.enable_auth %}checked{% endif %}>
+            <label class="form-check-label" for="enable_auth">启用用户认证</label>
+        </div>
+
+        <div class="mb-3">
+            <label for="log_level" class="form-label">日志级别</label>
+            <select class="form-select" id="log_level" name="log_level">
+                {% set levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] %}
+                {% for lvl in levels %}
+                    <option value="{{ lvl }}"
+                        {% if scenario and scenario.log_level == lvl %}
+                            selected
+                        {% endif %}>
+                        {{ lvl }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3 form-check">
+            <input type="checkbox" class="form-check-input" id="is_active" name="is_active"
+                   {% if scenario is none or scenario.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="is_active">启用该场景</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">{{ submit_text }}</button>
+        <a href="{{ url_for('admin.scenario_list') }}" class="btn btn-secondary">取消</a>
+    </form>
+    {% endblock %}
